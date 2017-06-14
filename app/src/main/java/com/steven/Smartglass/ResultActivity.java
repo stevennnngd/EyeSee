@@ -34,6 +34,9 @@ import com.iflytek.cloud.util.ResourceUtil;
 import com.steven.Smartglass.Baidutranslate.TransApi;
 import com.steven.Smartglass.Clarifai.Clarifai;
 import com.steven.Smartglass.Clarifai.Clarifaitr;
+import com.steven.Smartglass.Detect.Detect_TTS;
+import com.steven.Smartglass.Detect.FaceDetect;
+import com.steven.Smartglass.DetectCamera.activity.CameraActivity;
 import com.steven.Smartglass.FacePP.FaceAndColthes;
 import com.steven.Smartglass.FacePP.Faceplusplus;
 import com.steven.Smartglass.FacePP.Facesetting;
@@ -55,6 +58,7 @@ public class ResultActivity extends Activity {
     private Button voice;
     private Button takepic;
     private Button facepic;
+    private Button detect;
     private ImageView imageView;
     private TextView tv;
     private TextView turingtv;
@@ -73,19 +77,31 @@ public class ResultActivity extends Activity {
     public static final int ClarifaiMSGwhat = 5;
     public static final int ClarifaitrMSGwhat = 6;
     public static final int FaceclothesMSGwhat = 7;
+    public static final int DetectShibieMSGwhat = 8;
+    public static final int DetectFaceppMSGwhat = 9;
+    public static final int DetectTuringMSGwhat = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.result);
         //初始化讯飞语音
-        SpeechUtility.createUtility(this, SpeechConstant.APPID + "=59291633");
+        SpeechUtility.createUtility(this, SpeechConstant.APPID + "=593aa418");
         final SpeechSynthesizer mTts = SpeechSynthesizer.createSynthesizer(context, null);
         final VoiceWakeuper mIvw = VoiceWakeuper.createWakeuper(context, null);
 
         soundPool = new SoundPool(10, AudioManager.STREAM_SYSTEM, 5);
         soundPool.load(context, R.raw.takepic, 1);
         imageView = (ImageView) findViewById(R.id.pic);
+
+        detect = (Button) findViewById(R.id.detect);
+        detect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ResultActivity.this, CameraActivity.class);
+                startActivityForResult(intent, 0);
+            }
+        });
 
         facepic = (Button) findViewById(R.id.facepic);
         facepic.setOnClickListener(new View.OnClickListener() {
@@ -205,6 +221,23 @@ public class ResultActivity extends Activity {
                                     turingtv.setText(TTSmsg);
                                     new Xunfei_TTS(context, mTts, TTSmsg, handler, mWakeuperListener);
                                     break;
+                                case DetectFaceppMSGwhat:
+                                    tv.setText(TTSmsg);
+                                    new Detect_TTS(context, mTts, TTSmsg, handler, mWakeuperListener);
+                                    break;
+                                case DetectShibieMSGwhat:
+                                    turingtv.setText(TTSmsg);
+                                    if (TTSmsg.equals("此人不存在")) {
+                                        File file = new File(Environment.getExternalStorageDirectory(), "temp.jpeg");
+                                        FaceDetect faceDetect = new FaceDetect(file, "https://api-cn.faceplusplus.com/facepp/v3/detect", handler);
+                                        faceDetect.start();
+                                    } else
+                                        DetectTuring(context, TTSmsg);
+                                    break;
+                                case DetectTuringMSGwhat:
+                                    tv.setText(TTSmsg);
+                                    new Detect_TTS(context, mTts, TTSmsg, handler, mWakeuperListener);
+                                    break;
                             }
                         } catch (Exception e) {
                             System.out.println("-------------TTSmsg is null");
@@ -234,7 +267,7 @@ public class ResultActivity extends Activity {
         //语音唤醒测试
         //1.加载唤醒词资源，resPath为唤醒资源路径
         StringBuffer param = new StringBuffer();
-        String resPath = ResourceUtil.generateResourcePath(context, ResourceUtil.RESOURCE_TYPE.assets, "ivw/59291633.jet");
+        String resPath = ResourceUtil.generateResourcePath(context, ResourceUtil.RESOURCE_TYPE.assets, "ivw/593aa418.jet");
         param.append(ResourceUtil.IVW_RES_PATH + "=" + resPath);
         param.append("," + ResourceUtil.ENGINE_START + "=" + SpeechConstant.ENG_IVW);
         SpeechUtility.getUtility().setParameter(ResourceUtil.ENGINE_START, param.toString());
@@ -248,6 +281,20 @@ public class ResultActivity extends Activity {
         mIvw.startListening(mWakeuperListener);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (resultCode) {
+            case RESULT_OK:
+                System.out.println("执行检测完识别");
+                File file = new File(Environment.getExternalStorageDirectory(), "temp.jpeg");
+                FaceDetect faceDetect = new FaceDetect(file, "https://api-cn.faceplusplus.com/facepp/v3/search", handler);
+                faceDetect.start();
+                Toast.makeText(context, "正在识别，请稍等...", Toast.LENGTH_SHORT).show();
+                break;
+            default:
+                break;
+        }
+    }
 
     //听写监听器
     public WakeuperListener mWakeuperListener = new WakeuperListener() {
@@ -257,10 +304,13 @@ public class ResultActivity extends Activity {
             Toast.makeText(context, "语音唤醒开启", Toast.LENGTH_SHORT).show();
             voice.performClick();
         }
+
         public void onError(SpeechError error) {
         }
+
         public void onBeginOfSpeech() {
         }
+
         public void onEvent(int eventType, int arg1, int arg2, Bundle obj) {
             if (SpeechEvent.EVENT_IVW_RESULT == eventType) {
                 //当使用唤醒+识别功能时获取识别结果
@@ -269,6 +319,7 @@ public class ResultActivity extends Activity {
                 System.out.println("========================唤醒+识别reslut：" + reslut);
             }
         }
+
         @Override
         public void onVolumeChanged(int i) {
         }
@@ -333,6 +384,40 @@ public class ResultActivity extends Activity {
         }
     };
 
+    public void DetectTuring(Context context, String text) {
+        TuringManager mTuringManager;
+        String TURING_APIKEY = "cbf002b72f5f47d991a13bfd87f27172";
+        String TURING_SECRET = "6a01b96f4d898ab5";
+        mTuringManager = new TuringManager(context, TURING_APIKEY, TURING_SECRET);
+        mTuringManager.setHttpRequestListener(myHttpConnectionListenerDetect);
+        mTuringManager.requestTuring(text);
+    }
+
+    //网络请求回调
+    HttpRequestListener myHttpConnectionListenerDetect = new HttpRequestListener() {
+
+        @Override
+        public void onSuccess(String result) {
+            if (result != null) {
+                try {
+                    Log.d(TAG, "result" + result);
+                    JSONObject result_obj = new JSONObject(result);
+                    if (result_obj.has("text")) {
+                        Log.d(TAG, result_obj.get("text").toString());
+                        handler.obtainMessage(DetectTuringMSGwhat, result_obj.get("text").toString()).sendToTarget();
+                    }
+                } catch (JSONException e) {
+                    Log.d(TAG, "JSONException:" + e.getMessage());
+                }
+            }
+        }
+
+        @Override
+        public void onFail(int code, String error) {
+            Log.d(TAG, "onFail code:" + code + "|error:" + error);
+        }
+    };
+
     public void Voicestop() {
         SpeechSynthesizer mTts = SpeechSynthesizer.createSynthesizer(context, null);
         mTts.stopSpeaking();
@@ -370,7 +455,12 @@ public class ResultActivity extends Activity {
             xIntent("https://api-cn.faceplusplus.com/humanbodypp/beta/detect");
         } else if (TTSmsg.equals("人脸对比")) {
             xIntent("https://api-cn.faceplusplus.com/facepp/v3/search");
-        } else if (TTSmsg.equals("上传")) {
+        } else if (TTSmsg.equals("开启人脸检测")) {
+            Intent intent = new Intent(ResultActivity.this, CameraActivity.class);
+            startActivityForResult(intent, 0);
+        } else if (TTSmsg.equals("关闭人脸检测")) {
+            CameraActivity.Detectfinish.finish();
+        }else if (TTSmsg.equals("上传")) {
             takepic.performClick();
             new Handler().postDelayed(new Runnable() {
                 public void run() {

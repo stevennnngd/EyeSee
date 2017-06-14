@@ -17,6 +17,10 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.LOCATION_HARDWARE" />
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+
 
     <application
         android:allowBackup="true"
@@ -33,6 +37,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".FacePP.Facesetting" />
+        <activity android:name=".DetectCamera.activity.CameraActivity" />
     </application>
 
 </manifest>

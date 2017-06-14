@@ -95,6 +95,14 @@
                 android:layout_above="@+id/turing"
                 android:layout_alignParentStart="true" />
 
+            <Button
+                android:id="@+id/detect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignStart="@+id/facepic"
+                android:layout_alignTop="@+id/textView"
+                android:text="detect" />
+
         </RelativeLayout>
 
     </RelativeLayout>

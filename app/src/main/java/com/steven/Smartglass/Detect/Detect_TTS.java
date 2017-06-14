@@ -1,6 +1,8 @@
-package com.steven.Smartglass.XunFei;
+package com.steven.Smartglass.Detect;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -11,12 +13,15 @@ import com.iflytek.cloud.SynthesizerListener;
 import com.iflytek.cloud.VoiceWakeuper;
 import com.iflytek.cloud.WakeuperListener;
 import com.iflytek.cloud.util.ResourceUtil;
+import com.steven.Smartglass.DetectCamera.activity.CameraActivity;
+import com.steven.Smartglass.ResultActivity;
+import com.steven.Smartglass.XunFei.Xunfei_Tingxie;
 
 /**
  * Created by Administrator on 2017/4/17 0017.
  */
 
-public class Xunfei_TTS {
+public class Detect_TTS {
 
     private Context context;
     private SpeechSynthesizer mTts;
@@ -24,7 +29,7 @@ public class Xunfei_TTS {
     private Handler handler;
     private WakeuperListener mWakeuperListener;
 
-    public Xunfei_TTS(final Context context, SpeechSynthesizer mTts, String msg, Handler handler, WakeuperListener mWakeuperListener) {
+    public Detect_TTS(final Context context, SpeechSynthesizer mTts, String msg, Handler handler, WakeuperListener mWakeuperListener) {
         this.context = context;
         this.mTts = mTts;
         this.msg = msg;
@@ -38,9 +43,9 @@ public class Xunfei_TTS {
         mTts.setParameter(SpeechConstant.VOLUME, "90");//设置音量，范围0~100
         mTts.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD); //设置云端
 
-        if(msg.equals("我在,请说")) {
+        if (msg.equals("我在,请说")) {
             mTts.startSpeaking(msg, mSynListener);
-        }else {
+        } else {
             mTts.startSpeaking(msg, mSynListener1);
         }
     }
@@ -86,8 +91,12 @@ public class Xunfei_TTS {
         //会话结束回调接口，没有错误时，error为null
         public void onCompleted(SpeechError error) {
             //开始唤醒
-                final VoiceWakeuper mIvw = VoiceWakeuper.createWakeuper(context, null);
-                mIvw.startListening(mWakeuperListener);
+            final VoiceWakeuper mIvw = VoiceWakeuper.createWakeuper(context, null);
+            mIvw.startListening(mWakeuperListener);
+            //开启人脸检测
+            Activity activity = (Activity) context;
+            Intent intent = new Intent(context, CameraActivity.class);
+            activity.startActivityForResult(intent, 0);
         }
 
         //缓冲进度回调
